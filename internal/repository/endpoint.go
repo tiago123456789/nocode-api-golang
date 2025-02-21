@@ -32,7 +32,14 @@ func (e *EndpointRepository) Setup() error {
 			id SERIAL PRIMARY KEY,
 			path VARCHAR(255) NOT NULL,
 			data JSONB
-		)`,
+		);
+		CREATE TABLE IF NOT EXISTS auth(
+			id SERIAL PRIMARY KEY,
+			name VARCHAR(70) NOT NULL,
+			email VARCHAR(150) NOT NULL,
+			password VARCHAR(255) NOT NULL
+		);
+		`,
 	)
 
 	if err != nil {
