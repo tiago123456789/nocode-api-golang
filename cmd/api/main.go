@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"github.com/tiago123456789/nocode-api-golang/internal/config"
 	"github.com/tiago123456789/nocode-api-golang/internal/middleware"
@@ -30,6 +32,7 @@ func main() {
 
 	app := fiber.New()
 	db, err := config.StartDB()
+	cache := config.GetCache()
 
 	if err != nil {
 		log.Fatal(err)
@@ -38,6 +41,8 @@ func main() {
 	tableRepository := repository.TableRepositoryNew(db)
 	endpointRepository := repository.EndpointRepositoryNew(db)
 	customEndpointRepository := repository.CustomEndpointRepositoryNew(db)
+	authRespository := repository.AuthRepositoryNew(db)
+	authService := service.AuthServiceNew(authRespository)
 	tableService := service.TableServiceNew(tableRepository)
 	endpointService := service.EndpointServiceNew(db, tableService, endpointRepository)
 	customEndpoint := service.CustomEndpointServiceNew(db, customEndpointRepository)
@@ -53,6 +58,25 @@ func main() {
 	}
 
 	endpoints = endpointsFromDB
+	utils.SetEndpointsInCache(endpoints)
+
+	app.Use(cors.New())
+
+	app.Post("auth/login", func(c *fiber.Ctx) error {
+		var credential types.Credential
+		c.BodyParser(&credential)
+
+		token, err := authService.GetToken(credential)
+		if err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.Status(200).JSON(fiber.Map{
+			"accessToken": token,
+		})
+	})
 
 	app.Get("/tables",
 		middleware.HttpLogs,
@@ -79,9 +103,24 @@ func main() {
 		middleware.HttpLogs,
 		middleware.IsInternalAuthorized,
 		func(c *fiber.Ctx) error {
+			results, _ := endpointService.GetAllCreated()
 			return c.JSON(fiber.Map{
-				"data": endpoints,
+				"data": results,
 			})
+		})
+
+	app.Delete("/endpoints/:id",
+		middleware.HttpLogs,
+		middleware.IsInternalAuthorized,
+		func(c *fiber.Ctx) error {
+			id, _ := strconv.ParseInt(c.Params("id"), 10, 64)
+			path, err := endpointService.Delete(id)
+
+			if err == nil {
+				cache.Del(config.GetCacheContext(), path)
+			}
+
+			return c.SendStatus(204)
 		})
 
 	app.Post("/endpoints",
@@ -99,12 +138,13 @@ func main() {
 			}
 
 			endpoints[endpoint.Path] = endpoint
+			cache.Set(config.GetCacheContext(), endpoint.Path, true, 0)
 			return c.SendStatus(201)
 		})
 
 	app.Put("/:table/:id",
 		middleware.HttpLogs,
-		middleware.IsAuthorized(endpoints),
+		middleware.IsAuthorized(),
 		func(c *fiber.Ctx) error {
 			newRegister := map[string]interface{}{}
 			c.BodyParser(&newRegister)
@@ -126,7 +166,7 @@ func main() {
 
 	app.Post("/*",
 		middleware.HttpLogs,
-		middleware.IsAuthorized(endpoints),
+		middleware.IsAuthorized(),
 		func(c *fiber.Ctx) error {
 			endpoint := endpoints[c.Path()]
 			newRegister := map[string]interface{}{}
@@ -177,7 +217,7 @@ func main() {
 
 	app.Delete("/:table/:id",
 		middleware.HttpLogs,
-		middleware.IsAuthorized(endpoints),
+		middleware.IsAuthorized(),
 		func(c *fiber.Ctx) error {
 			err := customEndpoint.Delete(c.Params("table"), c.Params("id"))
 
@@ -192,7 +232,7 @@ func main() {
 
 	app.Get("/:table/:id",
 		middleware.HttpLogs,
-		middleware.IsAuthorized(endpoints),
+		middleware.IsAuthorized(),
 		func(c *fiber.Ctx) error {
 			results, _ := customEndpoint.GetById(c.Params("table"), c.Params("id"))
 			if len(results) == 0 {
@@ -206,7 +246,7 @@ func main() {
 
 	app.Get("/*",
 		middleware.HttpLogs,
-		middleware.IsAuthorized(endpoints),
+		middleware.IsAuthorized(),
 		func(c *fiber.Ctx) error {
 			endpoint := endpoints[c.Path()]
 			var params []interface{}

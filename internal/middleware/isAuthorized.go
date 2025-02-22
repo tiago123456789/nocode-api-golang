@@ -3,12 +3,14 @@ package middleware
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/tiago123456789/nocode-api-golang/internal/types"
+	"github.com/tiago123456789/nocode-api-golang/internal/config"
+	"github.com/tiago123456789/nocode-api-golang/internal/utils"
 )
 
-func IsAuthorized(endpoints map[string]types.Endpoint) fiber.Handler {
+func IsAuthorized() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		table := c.Params("table")
 		var path string
@@ -18,16 +20,15 @@ func IsAuthorized(endpoints map[string]types.Endpoint) fiber.Handler {
 			path = c.Path()
 		}
 
-		endpoint := endpoints[path]
-
-		if endpoint.Table == "" || len(endpoint.Table) == 0 {
+		cacheKey, _ := config.GetCache().Exists(config.GetCacheContext(), path).Result()
+		if cacheKey == 0 {
 			return c.Status(404).JSON(fiber.Map{
 				"message": "Endpoint not found",
 			})
-
 		}
 
-		if endpoint.IsPublic == true {
+		cacheValue, _ := config.GetCache().Get(config.GetCacheContext(), path).Bool()
+		if cacheValue == true {
 			return c.Next()
 		}
 
@@ -36,8 +37,15 @@ func IsAuthorized(endpoints map[string]types.Endpoint) fiber.Handler {
 			return c.Next()
 		}
 
+		accessToken := c.Get("Authorization")
+		accessToken = strings.ReplaceAll(accessToken, "Bearer ", "")
+
+		if err := utils.IsValidToken(accessToken); err == nil {
+			return c.Next()
+		}
+
 		return c.Status(403).JSON(fiber.Map{
-			"message": "You need to provide a valida api key.",
+			"message": "You need to provide a valida api key or accessToken.",
 		})
 	}
 }

@@ -45,6 +45,11 @@ func (e *EndpointService) Create(endpoint types.Endpoint) (types.Endpoint, error
 		return types.Endpoint{}, errors.New("Endpoint already exists")
 	}
 
-	_, err := e.repository.Create(endpoint)
+	id, err := e.repository.Create(endpoint)
+	endpoint.ID = int64(id)
 	return endpoint, err
+}
+
+func (e *EndpointService) Delete(id int64) (string, error) {
+	return e.repository.Delete(id)
 }

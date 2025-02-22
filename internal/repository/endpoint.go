@@ -14,6 +14,7 @@ type EndpointRepositoryInterface interface {
 	GetByPath(path string) (int, error)
 	GetAllCreated() (map[string]types.Endpoint, error)
 	Setup() error
+	Delete(id int64) (string, error)
 }
 
 type EndpointRepository struct {
@@ -50,7 +51,7 @@ func (e *EndpointRepository) Setup() error {
 }
 
 func (e *EndpointRepository) GetAllCreated() (map[string]types.Endpoint, error) {
-	rows, err := e.db.Query("select path, data from endpoints")
+	rows, err := e.db.Query("select id, path, data from endpoints ORDER BY id ASC")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +60,7 @@ func (e *EndpointRepository) GetAllCreated() (map[string]types.Endpoint, error) 
 	var registers []types.EndpointFromDatabase
 	for rows.Next() {
 		var item types.EndpointFromDatabase
-		if err := rows.Scan(&item.Path, &item.Data); err != nil {
+		if err := rows.Scan(&item.ID, &item.Path, &item.Data); err != nil {
 			return nil, err
 		}
 		registers = append(registers, item)
@@ -69,6 +70,7 @@ func (e *EndpointRepository) GetAllCreated() (map[string]types.Endpoint, error) 
 	for _, value := range registers {
 		var item types.Endpoint
 		json.Unmarshal([]byte(value.Data), &item)
+		item.ID = value.ID
 		endpoints[value.Path] = item
 	}
 
@@ -98,4 +100,15 @@ func (e *EndpointRepository) Create(endpoint types.Endpoint) (int, error) {
 
 	return id, nil
 
+}
+
+func (e *EndpointRepository) Delete(id int64) (string, error) {
+	sql := `DELETE FROM endpoints WHERE id=$1 RETURNING path;`
+	var path string
+	err := e.db.QueryRow(sql, id).Scan(&path)
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
 }
