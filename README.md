@@ -39,4 +39,8 @@ Below are the essential environment variables needed to run the project smoothly
 | **REDIS_URL**      | Redis cache URL                   | `cache:6379`                                     |
 | **REDIS_PASSWORD** | Redis password (keep empty)       | `""`                                             |
 
+### 🔑 Insominia endpoints
+
+[Endpoints from insominia](./nocode-api-Insomnia.json)
+
 💡 **Note:** Keep your `.env` file secure and never expose sensitive credentials in a public repository! 🔒
