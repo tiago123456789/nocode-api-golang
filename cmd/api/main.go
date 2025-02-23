@@ -44,8 +44,8 @@ func main() {
 	authRespository := repository.AuthRepositoryNew(db)
 	authService := service.AuthServiceNew(authRespository)
 	tableService := service.TableServiceNew(tableRepository)
-	endpointService := service.EndpointServiceNew(db, tableService, endpointRepository)
-	customEndpoint := service.CustomEndpointServiceNew(db, customEndpointRepository)
+	endpointService := service.EndpointServiceNew(tableService, endpointRepository)
+	customEndpoint := service.CustomEndpointServiceNew(customEndpointRepository)
 
 	err = endpointService.Setup()
 	if err != nil {

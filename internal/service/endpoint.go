@@ -1,7 +1,6 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
 
 	"github.com/tiago123456789/nocode-api-golang/internal/repository"
@@ -9,18 +8,15 @@ import (
 )
 
 type EndpointService struct {
-	db           *sql.DB
 	tableService *TableService
 	repository   repository.EndpointRepositoryInterface
 }
 
 func EndpointServiceNew(
-	db *sql.DB,
 	tableService *TableService,
 	repository repository.EndpointRepositoryInterface,
 ) *EndpointService {
 	return &EndpointService{
-		db:           db,
 		tableService: tableService,
 		repository:   repository,
 	}
@@ -36,7 +32,7 @@ func (e *EndpointService) GetAllCreated() (map[string]types.Endpoint, error) {
 
 func (e *EndpointService) Create(endpoint types.Endpoint) (types.Endpoint, error) {
 	table, _ := e.tableService.GetByName(endpoint.Table)
-	if endpoint.Query == "" && table == nil {
+	if endpoint.Query == "" && len(table) == 0 {
 		return types.Endpoint{}, errors.New("Table is not exists")
 	}
 
