@@ -11,6 +11,7 @@ Powered by a modern tech stack for speed and scalability:
 - **Fiber** (Lightning-fast web framework)
 - **PostgreSQL** (Database)
 - **Redis** (Cache)
+- **Github actions** (To run unit tests)
 - **Docker** & **Docker Compose** (Effortless containerized deployment)
 
 ## ⚡ HOW TO RUN LOCALLY
