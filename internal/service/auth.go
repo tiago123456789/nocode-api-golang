@@ -23,7 +23,7 @@ func AuthServiceNew(repository repository.AuthRepositoryInterface) *AuthService 
 
 func (a *AuthService) GetToken(credential types.Credential) (string, error) {
 	credentialReturned, err := a.repository.GetByEmail(credential.Email)
-	if err != nil {
+	if credentialReturned.Email == "" || len(credentialReturned.Email) == 0 {
 		return "", errors.New("Credential is invalid!")
 	}
 

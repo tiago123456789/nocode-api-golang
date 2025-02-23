@@ -1,0 +1,11 @@
+FROM golang:1.24 AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+COPY .env .
+
+CMD ["go", "run", "./configs/setupUser.go"]

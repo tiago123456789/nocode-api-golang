@@ -1,7 +1,6 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
 
 	"github.com/tiago123456789/nocode-api-golang/internal/repository"
@@ -9,16 +8,13 @@ import (
 )
 
 type CustomEndpointService struct {
-	db         *sql.DB
 	repository repository.CustomEndpointInterface
 }
 
 func CustomEndpointServiceNew(
-	db *sql.DB,
 	repository repository.CustomEndpointInterface,
 ) *CustomEndpointService {
 	return &CustomEndpointService{
-		db:         db,
 		repository: repository,
 	}
 }
