@@ -10,6 +10,8 @@ import (
 	"github.com/tiago123456789/nocode-api-golang/internal/utils"
 )
 
+const defaultCacheTime = 5
+
 func CacheResponse(cache *redis.Client) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		endpoint := c.Locals(c.Path()).(types.Endpoint)
@@ -25,7 +27,7 @@ func CacheResponse(cache *redis.Client) fiber.Handler {
 		if c.Response().StatusCode() == 200 {
 			body := c.Response().Body()
 			c.Response().StatusCode()
-			howManyTimeCache := 5
+			howManyTimeCache := defaultCacheTime
 			if endpoint.IsCacheable {
 				howManyTimeCache = endpoint.CacheTtl
 			}
