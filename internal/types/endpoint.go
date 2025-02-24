@@ -20,4 +20,6 @@ type Endpoint struct {
 	QueryParams          []string              `json:"queryParams"`
 	Validations          []ValidationsToApply  `json:"validations"`
 	ActionsBeforePersist []ActionBeforePersist `json:"actionsBeforePersist"`
+	IsCacheable          bool                  `json:"isCacheable"`
+	CacheTtl             int                   `json:"cacheTtl"`
 }

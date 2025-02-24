@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/json"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/tiago123456789/nocode-api-golang/internal/config"
 	"github.com/tiago123456789/nocode-api-golang/internal/types"
@@ -15,6 +17,8 @@ func SetEndpointsInCache(endpoints map[string]types.Endpoint) {
 
 	for key := range endpoints {
 		cache.Del(config.GetCacheContext(), key)
-		cache.Set(config.GetCacheContext(), key, endpoints[key].IsPublic, 0)
+		item := endpoints[key]
+		data, _ := json.Marshal(item)
+		cache.Set(config.GetCacheContext(), key, data, 0)
 	}
 }

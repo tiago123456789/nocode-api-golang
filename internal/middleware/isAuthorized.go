@@ -1,12 +1,14 @@
 package middleware
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/tiago123456789/nocode-api-golang/internal/config"
+	"github.com/tiago123456789/nocode-api-golang/internal/types"
 	"github.com/tiago123456789/nocode-api-golang/internal/utils"
 )
 
@@ -27,8 +29,11 @@ func IsAuthorized() fiber.Handler {
 			})
 		}
 
-		cacheValue, _ := config.GetCache().Get(config.GetCacheContext(), path).Bool()
-		if cacheValue == true {
+		cacheValue, _ := config.GetCache().Get(config.GetCacheContext(), path).Result()
+		var endpoint types.Endpoint
+		json.Unmarshal([]byte(cacheValue), &endpoint)
+		c.Locals(endpoint.Path, endpoint)
+		if endpoint.IsPublic == true {
 			return c.Next()
 		}
 
