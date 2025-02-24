@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -17,23 +18,16 @@ import (
 	"github.com/tiago123456789/nocode-api-golang/internal/utils"
 )
 
-var endpoints map[string]types.Endpoint
 var actionsBeforePersist map[string]types.ActionInterface
 
 func main() {
-	endpoints = map[string]types.Endpoint{}
 	actionsBeforePersist = map[string]types.ActionInterface{
 		"hash": service.HashPasswordActionServiceNew(),
 	}
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	_ = godotenv.Load()
 	app := fiber.New()
 	db, err := config.StartDB()
 	cache := config.GetCache()
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,8 +51,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	endpoints = endpointsFromDB
-	utils.SetEndpointsInCache(endpoints)
+	utils.SetEndpointsInCache(endpointsFromDB)
 
 	app.Use(cors.New())
 
@@ -137,8 +130,8 @@ func main() {
 				})
 			}
 
-			endpoints[endpoint.Path] = endpoint
-			cache.Set(config.GetCacheContext(), endpoint.Path, true, 0)
+			data, _ := json.Marshal(endpoint)
+			cache.Set(config.GetCacheContext(), endpoint.Path, data, 0)
 			return c.SendStatus(201)
 		})
 
@@ -168,7 +161,8 @@ func main() {
 		middleware.HttpLogs,
 		middleware.IsAuthorized(),
 		func(c *fiber.Ctx) error {
-			endpoint := endpoints[c.Path()]
+			endpoint := c.Locals(c.Path()).(types.Endpoint)
+
 			newRegister := map[string]interface{}{}
 			c.BodyParser(&newRegister)
 
@@ -247,8 +241,9 @@ func main() {
 	app.Get("/*",
 		middleware.HttpLogs,
 		middleware.IsAuthorized(),
+		middleware.CacheResponse(cache),
 		func(c *fiber.Ctx) error {
-			endpoint := endpoints[c.Path()]
+			endpoint := c.Locals(c.Path()).(types.Endpoint)
 			var params []interface{}
 
 			if endpoint.Query != "" {
