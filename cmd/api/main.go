@@ -31,6 +31,8 @@ func main() {
 
 	app := fiber.New()
 	db, err := config.StartDB()
+
+	config.InitCache()
 	cache := config.GetCache()
 	if err != nil {
 		log.Fatal(err)
