@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gofiber/contrib/fibernewrelic"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
@@ -71,6 +72,12 @@ func main() {
 	utils.SetEndpointsInCache(endpointsFromDB)
 
 	app.Use(cors.New())
+
+	app.Use(fibernewrelic.New(fibernewrelic.Config{
+		License: os.Getenv("NEW_RELIC_LICENSE_KEY"),
+		AppName: "NocodeApi",
+		Enabled: true,
+	}))
 
 	app.Post("auth/login", authController.Login)
 
