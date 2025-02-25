@@ -7,7 +7,7 @@ Simply define your endpoints based on your PostgreSQL tables, and you're good to
 
 Powered by a modern tech stack for speed and scalability:
 
-- **Golang** (v1.24)
+- **Go** (v1.24)
 - **Fiber** (Lightning-fast web framework)
 - **PostgreSQL** (Database)
 - **Redis** (Cache)
