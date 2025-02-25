@@ -8,17 +8,20 @@ import (
 )
 
 var ctx = context.Background()
+var rdb *redis.Client
 
 func GetCacheContext() context.Context {
 	return ctx
 }
 
-func GetCache() *redis.Client {
-	rdb := redis.NewClient(&redis.Options{
+func InitCache() {
+	rdb = redis.NewClient(&redis.Options{
 		Addr:     os.Getenv("REDIS_URL"),
 		Password: os.Getenv("REDIS_PASSWORD"),
 		DB:       0,
 	})
+}
 
+func GetCache() *redis.Client {
 	return rdb
 }
