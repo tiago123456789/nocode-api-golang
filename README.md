@@ -38,7 +38,7 @@ Below are the essential environment variables needed to run the project smoothly
 | **USER_PASSWORD**  | Default admin password            | `securepassword`                                 |
 | **JWT_SECRET**     | Secret key for JWT authentication | `your_jwt_secret`                                |
 | **REDIS_URL**      | Redis cache URL                   | `cache:6379`                                     |
-| **REDIS_PASSWORD** | Redis password (keep empty)       | `""`                                             |
+| **REDIS_PASSWORD** | Redis password (keep empty locally)       | `""`                                             |
 
 ### 🔑 Insominia endpoints
 
