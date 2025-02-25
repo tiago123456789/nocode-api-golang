@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -21,7 +22,12 @@ func main() {
 	actionsBeforePersist = map[string]types.ActionInterface{
 		"hash": service.HashPasswordActionServiceNew(),
 	}
-	_ = godotenv.Load()
+
+	env := os.Getenv("ENV")
+	if env != "production" {
+		_ = godotenv.Load()
+	}
+
 	app := fiber.New()
 	db, err := config.StartDB()
 	cache := config.GetCache()
