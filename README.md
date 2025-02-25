@@ -25,6 +25,10 @@ Powered by a modern tech stack for speed and scalability:
 
 ## 📌 ADDITIONAL NOTES
 
+### Architecture
+
+![Architecture](./archeticture.png "Architecture")
+
 ### 🔑 Environment Variables Explained
 
 Below are the essential environment variables needed to run the project smoothly:
