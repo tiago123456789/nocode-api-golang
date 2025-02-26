@@ -32,7 +32,7 @@ func IsAuthorized() fiber.Handler {
 		cacheValue, _ := config.GetCache().Get(config.GetCacheContext(), path).Result()
 		var endpoint types.Endpoint
 		json.Unmarshal([]byte(cacheValue), &endpoint)
-		c.Locals(endpoint.Path, endpoint)
+		c.Locals("endpoint", endpoint)
 		if endpoint.IsPublic == true {
 			return c.Next()
 		}
