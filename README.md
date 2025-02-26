@@ -53,6 +53,7 @@ Below are the essential environment variables needed to run the project smoothly
 | **NEW_RELIC_APP_NAME**    | New relic app name                                                   | `""`                                             |
 | **NEW_RELIC_ENABLED**     | if you want to enable the value is "yes", case no, the value is "no" | `"yes or no"`                                    |
 
+
 ### 🔑 Insominia endpoints
 
 [Endpoints from insominia](./nocode-api-Insomnia.json)
