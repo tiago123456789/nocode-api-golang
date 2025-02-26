@@ -38,6 +38,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	logger := config.GetLogger()
+
 	tableRepository := repository.TableRepositoryNew(db)
 	endpointRepository := repository.EndpointRepositoryNew(db)
 	customEndpointRepository := repository.CustomEndpointRepositoryNew(db)
@@ -47,7 +49,7 @@ func main() {
 	endpointService := service.EndpointServiceNew(tableService, endpointRepository)
 	customEndpointService := service.CustomEndpointServiceNew(customEndpointRepository)
 	authController := controller.AuthControllerNew(
-		*authService,
+		*authService, logger,
 	)
 	tableControler := controller.TableControllerNew(
 		*tableService,
