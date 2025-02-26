@@ -57,6 +57,7 @@ func main() {
 	endpointController := controller.EndpointControllerNew(
 		*endpointService,
 		cache,
+		logger,
 	)
 	customEndpointController := controller.CustomEndpointControllerNew(
 		*customEndpointService,
