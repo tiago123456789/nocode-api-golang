@@ -14,7 +14,7 @@ const defaultCacheTime = 5
 
 func CacheResponse(cache *redis.Client) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		endpoint := c.Locals(c.Path()).(types.Endpoint)
+		endpoint := c.Locals("endpoint").(types.Endpoint)
 		cacheKey := utils.GetCacheKeyByEndpoint(endpoint, c)
 		dataCached, _ := cache.Get(config.GetCacheContext(), cacheKey).Result()
 		if dataCached != "" && len(dataCached) > 0 {

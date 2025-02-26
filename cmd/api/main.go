@@ -62,6 +62,7 @@ func main() {
 	customEndpointController := controller.CustomEndpointControllerNew(
 		*customEndpointService,
 		actionsBeforePersist,
+		logger,
 	)
 
 	err = endpointService.Setup()

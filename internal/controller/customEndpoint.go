@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,26 +14,35 @@ import (
 type CustomEndpointController struct {
 	service              serviceModule.CustomEndpointService
 	actionsBeforePersist map[string]types.ActionInterface
+	logger               *slog.Logger
 }
 
 func CustomEndpointControllerNew(
 	service serviceModule.CustomEndpointService,
 	actionsBeforePersist map[string]types.ActionInterface,
+	logger *slog.Logger,
 ) *CustomEndpointController {
 	return &CustomEndpointController{
 		service:              service,
 		actionsBeforePersist: actionsBeforePersist,
+		logger:               logger,
 	}
 }
 
 func (cE *CustomEndpointController) Put(c *fiber.Ctx) error {
 	newRegister := map[string]interface{}{}
-	c.BodyParser(&newRegister)
+	if err := c.BodyParser(&newRegister); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": "Data provided is invalid",
+		})
+	}
 
+	endpoint := c.Locals("endpoint").(types.Endpoint)
 	err := cE.service.Put(
-		newRegister, c.Params("table"), c.Params("id"),
+		newRegister, endpoint.Table, c.Params("id"),
 	)
 	if err != nil {
+		cE.logger.Error(err.Error())
 		return c.Status(404).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -45,7 +55,7 @@ func (cE *CustomEndpointController) Put(c *fiber.Ctx) error {
 }
 
 func (cE *CustomEndpointController) Post(c *fiber.Ctx) error {
-	endpoint := c.Locals(c.Path()).(types.Endpoint)
+	endpoint := c.Locals("endpoint").(types.Endpoint)
 
 	newRegister := map[string]interface{}{}
 	c.BodyParser(&newRegister)
@@ -81,7 +91,7 @@ func (cE *CustomEndpointController) Post(c *fiber.Ctx) error {
 
 	id, err := cE.service.Post(newRegister, endpoint.Table)
 	if err != nil {
-		fmt.Print(err)
+		cE.logger.Error(err.Error())
 		return c.Status(500).JSON(fiber.Map{
 			"message": "Interval server error",
 		})
@@ -94,8 +104,8 @@ func (cE *CustomEndpointController) Post(c *fiber.Ctx) error {
 }
 
 func (cE *CustomEndpointController) Delete(c *fiber.Ctx) error {
-	err := cE.service.Delete(c.Params("table"), c.Params("id"))
-
+	endpoint := c.Locals("endpoint").(types.Endpoint)
+	err := cE.service.Delete(endpoint.Table, c.Params("id"))
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{
 			"error": err.Error(),
@@ -106,7 +116,15 @@ func (cE *CustomEndpointController) Delete(c *fiber.Ctx) error {
 }
 
 func (cE *CustomEndpointController) GetById(c *fiber.Ctx) error {
-	results, _ := cE.service.GetById(c.Params("table"), c.Params("id"))
+	endpoint := c.Locals("endpoint").(types.Endpoint)
+	results, err := cE.service.GetById(endpoint.Table, c.Params("id"))
+	if err != nil {
+		cE.logger.Error(err.Error())
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Internal server error",
+		})
+	}
+
 	if len(results) == 0 {
 		return c.SendStatus(404)
 	}
@@ -117,7 +135,7 @@ func (cE *CustomEndpointController) GetById(c *fiber.Ctx) error {
 }
 
 func (cE *CustomEndpointController) GetAll(c *fiber.Ctx) error {
-	endpoint := c.Locals(c.Path()).(types.Endpoint)
+	endpoint := c.Locals("endpoint").(types.Endpoint)
 	var params []interface{}
 
 	if endpoint.Query != "" {
@@ -139,13 +157,26 @@ func (cE *CustomEndpointController) GetAll(c *fiber.Ctx) error {
 			})
 		}
 
-		results, _ := cE.service.Get(endpoint, params)
+		results, err := cE.service.Get(endpoint, params)
+		if err != nil {
+			cE.logger.Error(err.Error())
+			return c.Status(500).JSON(fiber.Map{
+				"error": "Internal server error",
+			})
+		}
+
 		return c.JSON(fiber.Map{
 			"data": results,
 		})
 	}
 
-	results, _ := cE.service.Get(endpoint, params)
+	results, err := cE.service.Get(endpoint, params)
+	if err != nil {
+		cE.logger.Error(err.Error())
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Internal server error",
+		})
+	}
 	return c.JSON(fiber.Map{
 		"data": results,
 	})
