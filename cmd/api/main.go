@@ -79,11 +79,14 @@ func main() {
 
 	app.Use(cors.New())
 
-	app.Use(fibernewrelic.New(fibernewrelic.Config{
-		License: os.Getenv("NEW_RELIC_LICENSE_KEY"),
-		AppName: "NocodeApi",
-		Enabled: true,
-	}))
+	enabledNewRelic := os.Getenv("NEW_RELIC_ENABLED")
+	if enabledNewRelic == "yes" {
+		app.Use(fibernewrelic.New(fibernewrelic.Config{
+			License: os.Getenv("NEW_RELIC_LICENSE_KEY"),
+			AppName: os.Getenv("NEW_RELIC_APP_NAME"),
+			Enabled: true,
+		}))
+	}
 
 	app.Post("auth/login", authController.Login)
 
