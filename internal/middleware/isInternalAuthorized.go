@@ -22,6 +22,6 @@ func IsInternalAuthorized(c *fiber.Ctx) error {
 	}
 
 	return c.Status(403).JSON(fiber.Map{
-		"message": "You need to provide a valida api key.",
+		"message": "You need to provide a valida api key or accessToken.",
 	})
 }
