@@ -3,6 +3,29 @@
 This project is designed to help you create an API as quickly as possible—without writing a backend!  
 Simply define your endpoints based on your PostgreSQL tables, and you're good to go.
 
+## 🚀 **Features**  
+
+✅ **Flexible CRUD Operations**  
+- Effortlessly create, read, update, and delete records in a PostgreSQL table.  
+- 🔐 Define route access — choose whether endpoints are public or restricted with a simple setting.  
+
+✅ **Custom Query Endpoints**  
+- Set up custom query endpoints with ease.  
+- 🔐 Control access — mark routes as public or private for secure data handling.  
+
+✅ **Dynamic Query Filtering**  
+- Build endpoints that support dynamic query strings for powerful filtering.  
+- 🌐 Perfect for pagination and complex multi-table queries — get the data you need, fast.  
+
+✅ **Smart Input Validation**  
+- Ensure data integrity with robust validation for record creation.  
+- 🚦 Catch errors early and keep your data clean.  
+
+✅ **Optimized Caching**  
+- Boost performance with caching for `GET` endpoints.  
+- ⏳ Customize the TTL (Time-to-Live) to control how long data stays fresh in Redis.  
+
+
 ## 🛠 TECHNOLOGIES
 
 Powered by a modern tech stack for speed and scalability:
