@@ -1,29 +1,34 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 
 	"github.com/tiago123456789/nocode-api-golang/internal/types"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type EndpointRepositoryInterface interface {
-	Create(endpoint types.Endpoint) (int, error)
-	GetByPath(path string) (int, error)
-	GetAllCreated() (map[string]types.Endpoint, error)
+	Create(ctx context.Context, endpoint types.Endpoint) (int, error)
+	GetByPath(ctx context.Context, path string) (int, error)
+	GetAllCreated(ctx context.Context) (map[string]types.Endpoint, error)
 	Setup() error
 	Delete(id int64) (string, error)
 }
 
 type EndpointRepository struct {
-	db *sql.DB
+	db     *sql.DB
+	tracer trace.Tracer
 }
 
-func EndpointRepositoryNew(db *sql.DB) *EndpointRepository {
+func EndpointRepositoryNew(
+	db *sql.DB, tracer trace.Tracer) *EndpointRepository {
 	return &EndpointRepository{
-		db: db,
+		db:     db,
+		tracer: tracer,
 	}
 }
 
@@ -50,7 +55,10 @@ func (e *EndpointRepository) Setup() error {
 	return nil
 }
 
-func (e *EndpointRepository) GetAllCreated() (map[string]types.Endpoint, error) {
+func (e *EndpointRepository) GetAllCreated(ctx context.Context) (map[string]types.Endpoint, error) {
+	ctx, span := e.tracer.Start(ctx, "get-all-repository")
+	defer span.End()
+
 	rows, err := e.db.Query("select id, path, data from endpoints ORDER BY id ASC")
 	if err != nil {
 		log.Fatal(err)
@@ -77,13 +85,19 @@ func (e *EndpointRepository) GetAllCreated() (map[string]types.Endpoint, error) 
 	return endpoints, nil
 }
 
-func (e *EndpointRepository) GetByPath(path string) (int, error) {
+func (e *EndpointRepository) GetByPath(ctx context.Context, path string) (int, error) {
+	ctx, span := e.tracer.Start(ctx, "get-by-path-repository")
+	defer span.End()
+
 	id := 0
 	err := e.db.QueryRow("SELECT id FROM endpoints where path = $1", path).Scan(&id)
 	return id, err
 }
 
-func (e *EndpointRepository) Create(endpoint types.Endpoint) (int, error) {
+func (e *EndpointRepository) Create(ctx context.Context, endpoint types.Endpoint) (int, error) {
+	ctx, span := e.tracer.Start(ctx, "create-endpoint-repository")
+	defer span.End()
+
 	id := 0
 	sql := fmt.Sprintf(
 		`INSERT INTO endpoints(path, data) VALUES ($1, $2) RETURNING id;`,

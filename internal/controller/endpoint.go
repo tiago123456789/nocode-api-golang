@@ -10,28 +10,35 @@ import (
 	"github.com/tiago123456789/nocode-api-golang/internal/config"
 	serviceModule "github.com/tiago123456789/nocode-api-golang/internal/service"
 	"github.com/tiago123456789/nocode-api-golang/internal/types"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type EndpointController struct {
 	service serviceModule.EndpointService
 	cache   *redis.Client
 	logger  *slog.Logger
+	tracer  trace.Tracer
 }
 
 func EndpointControllerNew(
 	service serviceModule.EndpointService,
 	cache *redis.Client,
 	logger *slog.Logger,
+	tracer trace.Tracer,
 ) *EndpointController {
 	return &EndpointController{
 		service: service,
 		cache:   cache,
 		logger:  logger,
+		tracer:  tracer,
 	}
 }
 
 func (e *EndpointController) GetAllCreated(c *fiber.Ctx) error {
-	results, _ := e.service.GetAllCreated()
+	ctx, span := e.tracer.Start(c.UserContext(), "get-all-endpoint")
+	defer span.End()
+
+	results, _ := e.service.GetAllCreated(ctx)
 	return c.JSON(fiber.Map{
 		"data": results,
 	})
@@ -52,10 +59,13 @@ func (e *EndpointController) DeleteById(c *fiber.Ctx) error {
 }
 
 func (e *EndpointController) Create(c *fiber.Ctx) error {
+	ctx, span := e.tracer.Start(c.UserContext(), "create-endpoint")
+	defer span.End()
+
 	var endpoint types.Endpoint
 	c.BodyParser(&endpoint)
 
-	_, err := e.service.Create(endpoint)
+	_, err := e.service.Create(ctx, endpoint)
 	if err != nil {
 		e.logger.Error(err.Error())
 		return c.Status(409).JSON(fiber.Map{
