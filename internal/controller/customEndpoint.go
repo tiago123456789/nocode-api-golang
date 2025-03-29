@@ -9,27 +9,35 @@ import (
 	serviceModule "github.com/tiago123456789/nocode-api-golang/internal/service"
 	"github.com/tiago123456789/nocode-api-golang/internal/types"
 	"github.com/tiago123456789/nocode-api-golang/internal/utils"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type CustomEndpointController struct {
 	service              serviceModule.CustomEndpointService
 	actionsBeforePersist map[string]types.ActionInterface
 	logger               *slog.Logger
+	tracer               trace.Tracer
 }
 
 func CustomEndpointControllerNew(
 	service serviceModule.CustomEndpointService,
 	actionsBeforePersist map[string]types.ActionInterface,
 	logger *slog.Logger,
+	tracer trace.Tracer,
+
 ) *CustomEndpointController {
 	return &CustomEndpointController{
 		service:              service,
 		actionsBeforePersist: actionsBeforePersist,
 		logger:               logger,
+		tracer:               tracer,
 	}
 }
 
 func (cE *CustomEndpointController) Put(c *fiber.Ctx) error {
+	ctx, span := cE.tracer.Start(c.UserContext(), "update-register")
+	defer span.End()
 	newRegister := map[string]interface{}{}
 	if err := c.BodyParser(&newRegister); err != nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -38,7 +46,12 @@ func (cE *CustomEndpointController) Put(c *fiber.Ctx) error {
 	}
 
 	endpoint := c.Locals("endpoint").(types.Endpoint)
+	span.SetAttributes(
+		attribute.String("Table", endpoint.Table),
+		attribute.String("Id", c.Params("id")),
+	)
 	err := cE.service.Put(
+		ctx,
 		newRegister, endpoint.Table, c.Params("id"),
 	)
 	if err != nil {
@@ -55,6 +68,8 @@ func (cE *CustomEndpointController) Put(c *fiber.Ctx) error {
 }
 
 func (cE *CustomEndpointController) Post(c *fiber.Ctx) error {
+	ctx, span := cE.tracer.Start(c.UserContext(), "create-register")
+	defer span.End()
 	endpoint := c.Locals("endpoint").(types.Endpoint)
 
 	newRegister := map[string]interface{}{}
@@ -89,7 +104,10 @@ func (cE *CustomEndpointController) Post(c *fiber.Ctx) error {
 		}
 	}
 
-	id, err := cE.service.Post(newRegister, endpoint.Table)
+	span.SetAttributes(
+		attribute.String("Table", endpoint.Table),
+	)
+	id, err := cE.service.Post(ctx, newRegister, endpoint.Table)
 	if err != nil {
 		cE.logger.Error(err.Error())
 		return c.Status(500).JSON(fiber.Map{
@@ -104,8 +122,14 @@ func (cE *CustomEndpointController) Post(c *fiber.Ctx) error {
 }
 
 func (cE *CustomEndpointController) Delete(c *fiber.Ctx) error {
+	ctx, span := cE.tracer.Start(c.UserContext(), "delete-register")
+	defer span.End()
 	endpoint := c.Locals("endpoint").(types.Endpoint)
-	err := cE.service.Delete(endpoint.Table, c.Params("id"))
+	span.SetAttributes(
+		attribute.String("Table", endpoint.Table),
+		attribute.String("Id", c.Params("id")),
+	)
+	err := cE.service.Delete(ctx, endpoint.Table, c.Params("id"))
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{
 			"error": err.Error(),
@@ -116,8 +140,14 @@ func (cE *CustomEndpointController) Delete(c *fiber.Ctx) error {
 }
 
 func (cE *CustomEndpointController) GetById(c *fiber.Ctx) error {
+	ctx, span := cE.tracer.Start(c.UserContext(), "get-by-id-register")
+	defer span.End()
 	endpoint := c.Locals("endpoint").(types.Endpoint)
-	results, err := cE.service.GetById(endpoint.Table, c.Params("id"))
+	span.SetAttributes(
+		attribute.String("Table", endpoint.Table),
+		attribute.String("Id", c.Params("id")),
+	)
+	results, err := cE.service.GetById(ctx, endpoint.Table, c.Params("id"))
 	if err != nil {
 		cE.logger.Error(err.Error())
 		return c.Status(500).JSON(fiber.Map{
@@ -135,7 +165,13 @@ func (cE *CustomEndpointController) GetById(c *fiber.Ctx) error {
 }
 
 func (cE *CustomEndpointController) GetAll(c *fiber.Ctx) error {
+	ctx, span := cE.tracer.Start(c.UserContext(), "get-all-register")
+	defer span.End()
+
 	endpoint := c.Locals("endpoint").(types.Endpoint)
+	span.SetAttributes(
+		attribute.String("Table", endpoint.Table),
+	)
 	var params []interface{}
 
 	if endpoint.Query != "" {
@@ -157,7 +193,7 @@ func (cE *CustomEndpointController) GetAll(c *fiber.Ctx) error {
 			})
 		}
 
-		results, err := cE.service.Get(endpoint, params)
+		results, err := cE.service.Get(ctx, endpoint, params)
 		if err != nil {
 			cE.logger.Error(err.Error())
 			return c.Status(500).JSON(fiber.Map{
@@ -170,7 +206,7 @@ func (cE *CustomEndpointController) GetAll(c *fiber.Ctx) error {
 		})
 	}
 
-	results, err := cE.service.Get(endpoint, params)
+	results, err := cE.service.Get(ctx, endpoint, params)
 	if err != nil {
 		cE.logger.Error(err.Error())
 		return c.Status(500).JSON(fiber.Map{

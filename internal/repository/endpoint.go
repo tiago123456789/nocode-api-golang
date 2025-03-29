@@ -16,7 +16,7 @@ type EndpointRepositoryInterface interface {
 	GetByPath(ctx context.Context, path string) (int, error)
 	GetAllCreated(ctx context.Context) (map[string]types.Endpoint, error)
 	Setup() error
-	Delete(id int64) (string, error)
+	Delete(ctx context.Context, id int64) (string, error)
 }
 
 type EndpointRepository struct {
@@ -116,7 +116,9 @@ func (e *EndpointRepository) Create(ctx context.Context, endpoint types.Endpoint
 
 }
 
-func (e *EndpointRepository) Delete(id int64) (string, error) {
+func (e *EndpointRepository) Delete(ctx context.Context, id int64) (string, error) {
+	ctx, span := e.tracer.Start(ctx, "delete-endpoint-repository")
+	defer span.End()
 	sql := `DELETE FROM endpoints WHERE id=$1 RETURNING path;`
 	var path string
 	err := e.db.QueryRow(sql, id).Scan(&path)

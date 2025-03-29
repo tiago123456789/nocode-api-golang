@@ -45,8 +45,12 @@ func (e *EndpointController) GetAllCreated(c *fiber.Ctx) error {
 }
 
 func (e *EndpointController) DeleteById(c *fiber.Ctx) error {
+	ctx, span := e.tracer.Start(c.UserContext(), "delete-endpoint")
+	defer span.End()
+
 	id, _ := strconv.ParseInt(c.Params("id"), 10, 64)
-	path, err := e.service.Delete(id)
+	path, err := e.service.Delete(ctx, id)
+
 	if err != nil {
 		e.logger.Error(err.Error())
 		return c.Status(500).JSON(fiber.Map{

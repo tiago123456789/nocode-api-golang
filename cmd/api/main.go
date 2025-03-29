@@ -152,12 +152,12 @@ func main() {
 
 	tableRepository := repository.TableRepositoryNew(db, tracer)
 	endpointRepository := repository.EndpointRepositoryNew(db, tracer)
-	customEndpointRepository := repository.CustomEndpointRepositoryNew(db)
+	customEndpointRepository := repository.CustomEndpointRepositoryNew(db, tracer)
 	authRespository := repository.AuthRepositoryNew(db)
 	authService := service.AuthServiceNew(authRespository)
 	tableService := service.TableServiceNew(tableRepository, tracer)
 	endpointService := service.EndpointServiceNew(tableService, endpointRepository, tracer)
-	customEndpointService := service.CustomEndpointServiceNew(customEndpointRepository)
+	customEndpointService := service.CustomEndpointServiceNew(customEndpointRepository, tracer)
 	authController := controller.AuthControllerNew(
 		*authService, logger,
 	)
@@ -175,6 +175,7 @@ func main() {
 		*customEndpointService,
 		actionsBeforePersist,
 		logger,
+		tracer,
 	)
 
 	err = endpointService.Setup()
@@ -191,15 +192,6 @@ func main() {
 
 	app.Use(cors.New())
 	app.Use(otelfiber.Middleware())
-
-	// app.Use(func(c *fiber.Ctx) error {
-	// 	ctx, span := tracer.Start(c.Context(), "info")
-	// 	defer span.End()
-	// 	viewCounter.Add(ctx, 1)
-
-	// 	err := c.Next()
-	// 	return err
-	// })
 
 	// enabledNewRelic := os.Getenv("NEW_RELIC_ENABLED")
 	// if enabledNewRelic == "yes" {

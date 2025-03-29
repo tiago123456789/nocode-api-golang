@@ -56,6 +56,8 @@ func (e *EndpointService) Create(ctx context.Context, endpoint types.Endpoint) (
 	return endpoint, err
 }
 
-func (e *EndpointService) Delete(id int64) (string, error) {
-	return e.repository.Delete(id)
+func (e *EndpointService) Delete(ctx context.Context, id int64) (string, error) {
+	ctx, span := e.tracer.Start(ctx, "delete-endpoint-service")
+	defer span.End()
+	return e.repository.Delete(ctx, id)
 }

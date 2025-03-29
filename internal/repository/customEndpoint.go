@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -8,29 +9,36 @@ import (
 
 	"github.com/tiago123456789/nocode-api-golang/internal/types"
 	dbquery "github.com/tiago123456789/nocode-api-golang/pkg/dbQuery"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type CustomEndpointInterface interface {
 	GetById(
+		ctx context.Context,
 		table string,
 		id string,
 	) ([]map[string]interface{}, error)
 	GetAll(
+		ctx context.Context,
 		endpoint types.Endpoint,
 	) ([]map[string]interface{}, error)
 	GetAllByCustomQuery(
+		ctx context.Context,
 		endpoint types.Endpoint,
 		params []interface{},
 	) ([]map[string]interface{}, error)
 	Delete(
+		ctx context.Context,
 		table string,
 		id string,
 	) error
 	Create(
+		ctx context.Context,
 		newRegister map[string]interface{},
 		table string,
 	) (int64, error)
 	Update(
+		ctx context.Context,
 		newRegister map[string]interface{},
 		table string,
 		idRegister string,
@@ -38,20 +46,26 @@ type CustomEndpointInterface interface {
 }
 
 type CustomEndpointRepository struct {
-	db *sql.DB
+	db     *sql.DB
+	tracer trace.Tracer
 }
 
-func CustomEndpointRepositoryNew(db *sql.DB) *CustomEndpointRepository {
+func CustomEndpointRepositoryNew(db *sql.DB, tracer trace.Tracer,
+) *CustomEndpointRepository {
 	return &CustomEndpointRepository{
-		db: db,
+		db:     db,
+		tracer: tracer,
 	}
 }
 
 func (c *CustomEndpointRepository) Update(
+	ctx context.Context,
 	newRegister map[string]interface{},
 	table string,
 	idRegister string,
 ) error {
+	ctx, span := c.tracer.Start(ctx, "update-register-repository")
+	defer span.End()
 	count := 1
 	fieldToUpdate := make([]string, 0, len(newRegister))
 	values := make([]interface{}, 0, len(newRegister))
@@ -83,9 +97,13 @@ func (c *CustomEndpointRepository) Update(
 }
 
 func (c *CustomEndpointRepository) Create(
+	ctx context.Context,
 	newRegister map[string]interface{},
 	table string,
 ) (int64, error) {
+	ctx, span := c.tracer.Start(ctx, "create-register-repository")
+	defer span.End()
+
 	count := 1
 	keys := make([]string, 0, len(newRegister))
 	values := make([]interface{}, 0, len(newRegister))
@@ -117,9 +135,13 @@ func (c *CustomEndpointRepository) Create(
 }
 
 func (c *CustomEndpointRepository) GetAllByCustomQuery(
+	ctx context.Context,
 	endpoint types.Endpoint,
 	params []interface{},
 ) ([]map[string]interface{}, error) {
+	ctx, span := c.tracer.Start(ctx, "get-all-by-custom-query-register-repository")
+	defer span.End()
+
 	sql := endpoint.Query
 	if len(endpoint.QueryParams) > 0 {
 		if len(params) != len(endpoint.QueryParams) {
@@ -149,9 +171,12 @@ func (c *CustomEndpointRepository) GetAllByCustomQuery(
 }
 
 func (c *CustomEndpointRepository) Delete(
+	ctx context.Context,
 	table string,
 	id string,
 ) error {
+	ctx, span := c.tracer.Start(ctx, "delete-register-repository")
+	defer span.End()
 	sql := fmt.Sprintf(`DELETE FROM "%s" WHERE id=$1;`, table)
 	_, err := c.db.Exec(sql, id)
 	if err != nil {
@@ -162,8 +187,12 @@ func (c *CustomEndpointRepository) Delete(
 }
 
 func (c *CustomEndpointRepository) GetAll(
+	ctx context.Context,
 	endpoint types.Endpoint,
 ) ([]map[string]interface{}, error) {
+	ctx, span := c.tracer.Start(ctx, "get-all-register-repository")
+	defer span.End()
+
 	sql := fmt.Sprintf("SELECT * FROM \"%s\"", endpoint.Table)
 	rows, err := c.db.Query(sql)
 	if err != nil {
@@ -176,9 +205,13 @@ func (c *CustomEndpointRepository) GetAll(
 }
 
 func (c *CustomEndpointRepository) GetById(
+	ctx context.Context,
 	table string,
 	id string,
 ) ([]map[string]interface{}, error) {
+	ctx, span := c.tracer.Start(ctx, "get-by-register-repository")
+	defer span.End()
+
 	sql := fmt.Sprintf(`SELECT * FROM "%s" WHERE id=$1;`, table)
 	rows, err := c.db.Query(sql, id)
 	if err != nil {
